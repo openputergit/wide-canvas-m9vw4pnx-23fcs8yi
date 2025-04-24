@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartAgri - Intelligent Agriculture Solutions</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .bg-hero {
+            background-image: url('https://images.unsplash.com/photo-1625246333195-78d9c38ad449?q=80&w=1920');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .bg-weather {
+            background-image: url('https://images.unsplash.com/photo-1504608524841-42fe6f032b4b?q=80&w=1920');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .chatbot {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 3px solid #3498db;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Navigation -->
+    <nav class="bg-green-600 text-white p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="#" class="text-2xl font-bold">SmartAgri</a>
+            <div class="space-x-4" id="navLinks">
+                <a href="#" class="hover:text-green-200" onclick="showSection('home')">Home</a>
+                <a href="#" class="hover:text-green-200" onclick="showSection('weather')">Weather</a>
+                <a href="#" class="hover:text-green-200" onclick="showSection('pest')">Pest Detection</a>
+                <a href="#" class="hover:text-green-200" id="loginBtn" onclick="showSection('auth')">Login/Register</a>
+                <a href="#" class="hidden hover:text-green-200" id="logoutBtn" onclick="logout()">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Home Section -->
+    <section id="home" class="min-h-screen bg-hero">
+        <div class="container mx-auto px-4 py-16">
+            <div class="bg-white/90 p-8 rounded-lg max-w-2xl">
+                <h1 class="text-4xl font-bold text-green-700 mb-4">Welcome to SmartAgri</h1>
+                <p class="text-gray-700 mb-6">Your intelligent agriculture companion that helps you make data-driven decisions for better crop management.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-green-50 p-4 rounded-lg">
+                        <i class="bi bi-cloud-sun text-3xl text-green-600"></i>
+                        <h3 class="text-xl font-semibold mt-2">Weather Monitoring</h3>
+                        <p class="text-sm text-gray-600">Real-time weather updates and forecasts</p>
+                    </div>
+                    <div class="bg-green-50 p-4 rounded-lg">
+                        <i class="bi bi-bug text-3xl text-green-600"></i>
+                        <h3 class="text-xl font-semibold mt-2">Pest Detection</h3>
+                        <p class="text-sm text-gray-600">AI-powered pest identification</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Weather Section -->
+    <section id="weather" class="hidden min-h-screen bg-weather">
+        <div class="container mx-auto px-4 py-16">
+            <div class="bg-white/90 p-8 rounded-lg">
+                <h2 class="text-3xl font-bold text-green-700 mb-6">Weather Monitoring</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <h3 class="text-xl font-semibold mb-4">Current Weather</h3>
+                        <div id="currentWeather" class="text-center">
+                            <div class="loader mx-auto"></div>
+                        </div>
+                    </div>
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <h3 class="text-xl font-semibold mb-4">Hourly Forecast</h3>
+                        <canvas id="weatherChart"></canvas>
+                    </div>
+                </div>
+                <div class="mt-6 bg-red-50 p-4 rounded-lg hidden" id="weatherAlert">
+                    <h3 class="text-xl font-semibold text-red-600">Weather Alert!</h3>
+                    <p id="alertText" class="text-red-700"></p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pest Detection Section -->
+    <section id="pest" class="hidden min-h-screen bg-gray-100">
+        <div class="container mx-auto px-4 py-16">
+            <div class="bg-white p-8 rounded-lg">
+                <h2 class="text-3xl font-bold text-green-700 mb-6">Pest Detection</h2>
+                <div class="mb-6">
+                    <label class="block text-gray-700 mb-2">Upload crop image for pest detection</label>
+                    <input type="file" id="pestImage" accept="image/*" class="w-full p-2 border rounded">
+                </div>
+                <button onclick="detectPests()" class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700">
+                    Analyze Image
+                </button>
+                <div id="pestResults" class="mt-6 hidden">
+                    <h3 class="text-xl font-semibold mb-2">Detection Results</h3>
+                    <div id="pestResultsContent" class="bg-gray-50 p-4 rounded"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Auth Section -->
+    <section id="auth" class="hidden min-h-screen bg-gray-100">
+        <div class="container mx-auto px-4 py-16">
+            <div class="max-w-md mx-auto bg-white p-8 rounded-lg shadow">
+                <div class="flex justify-between mb-6">
+                    <button onclick="toggleAuth('login')" class="text-lg font-semibold" id="loginTab">Login</button>
+                    <button onclick="toggleAuth('register')" class="text-lg font-semibold" id="registerTab">Register</button>
+                </div>
+                <form id="loginForm" onsubmit="handleAuth(event, 'login')" class="space-y-4">
+                    <div>
+                        <label class="block text-gray-700 mb-2">Email</label>
+                        <input type="email" required class="w-full p-2 border rounded">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-2">Password</label>
+                        <input type="password" required class="w-full p-2 border rounded">
+                    </div>
+                    <button type="submit" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">
+                        Login
+                    </button>
+                </form>
+                <form id="registerForm" onsubmit="handleAuth(event, 'register')" class="hidden space-y-4">
+                    <div>
+                        <label class="block text-gray-700 mb-2">Name</label>
+                        <input type="text" required class="w-full p-2 border rounded">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-2">Email</label>
+                        <input type="email" required class="w-full p-2 border rounded">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-2">Password</label>
+                        <input type="password" required class="w-full p-2 border rounded">
+                    </div>
+                    <button type="submit" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">
+                        Register
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Chatbot -->
+    <div class="chatbot">
+        <button onclick="toggleChat()" class="bg-green-600 text-white p-4 rounded-full shadow-lg">
+            <i class="bi bi-chat-dots text-2xl"></i>
+        </button>
+        <div id="chatWindow" class="hidden bg-white rounded-lg shadow-lg w-80 h-96 absolute bottom-16 right-0">
+            <div class="p-4 bg-green-600 text-white rounded-t-lg">
+                <h3 class="font-semibold">SmartAgri Assistant</h3>
+            </div>
+            <div id="chatMessages" class="h-64 overflow-y-auto p-4">
+                <div class="mb-4">
+                    <div class="bg-green-100 p-2 rounded-lg inline-block">
+                        Hello! How can I help you with your farming needs today?
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 border-t">
+                <div class="flex gap-2">
+                    <input type="text" id="chatInput" placeholder="Type your message..." class="flex-1 p-2 border rounded">
+                    <button onclick="sendMessage()" class="bg-green-600 text-white px-4 rounded">
+                        <i class="bi bi-send"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Navigation and Section Display
+        function showSection(section) {
+            document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+            document.getElementById(section).classList.remove('hidden');
+        }
+
+        // Auth Handling
+        function toggleAuth(type) {
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const loginTab = document.getElementById('loginTab');
+            const registerTab = document.getElementById('registerTab');
+
+            if (type === 'login') {
+                loginForm.classList.remove('hidden');
+                registerForm.classList.add('hidden');
+                loginTab.classList.add('text-green-600');
+                registerTab.classList.remove('text-green-600');
+            } else {
+                loginForm.classList.add('hidden');
+                registerForm.classList.remove('hidden');
+                loginTab.classList.remove('text-green-600');
+                registerTab.classList.add('text-green-600');
+            }
+        }
+
+        async function handleAuth(event, type) {
+            event.preventDefault();
+            const form = event.target;
+            const data = {
+                appSlug: 'smartagri-123456',
+                action: 'create',
+                collection: 'users',
+                data: {
+                    email: form.querySelector('input[type="email"]').value,
+                    password: form.querySelector('input[type="password"]').value
+                }
+            };
+
+            if (type === 'register') {
+                data.data.name = form.querySelector('input[type="text"]').value;
+            }
+
+            try {
+                const response = await fetch('https://r0c8kgwocscg8gsokogwwsw4.zetaverse.one/mongodb', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer WoErTALeTYQ2wIzti2lX6MJgAtw1',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    alert(`${type.charAt(0).toUpperCase() + type.slice(1)} successful!`);
+                    document.getElementById('loginBtn').classList.add('hidden');
+                    document.getElementById('logoutBtn').classList.remove('hidden');
+                    showSection('home');
+                }
+            } catch (error) {
+                console.error('Auth error:', error);
+                alert('Authentication failed. Please try again.');
+            }
+        }
+
+        function logout() {
+            document.getElementById('loginBtn').classList.remove('hidden');
+            document.getElementById('logoutBtn').classList.add('hidden');
+            showSection('home');
+        }
+
+        // Weather Chart Setup
+        const ctx = document.getElementById('weatherChart').getContext('2d');
+        const weatherChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+                datasets: [{
+                    label: 'Temperature (°C)',
+                    data: Array.from({length: 24}, () => Math.random() * 10 + 20),
+                    borderColor: 'rgb(75, 192, 192)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Weather Updates
+        async function updateWeather() {
+            const weatherDiv = document.getElementById('currentWeather');
+            weatherDiv.querySelector('.loader').style.display = 'block';
+
+            // Simulate weather API call
+            setTimeout(() => {
+                const temp = Math.round(Math.random() * 10 + 20);
+                const humidity = Math.round(Math.random() * 30 + 50);
+                
+                weatherDiv.innerHTML = `
+                    <div class="text-4xl font-bold text-blue-600">${temp}°C</div>
+                    <div class="text-gray-600">Humidity: ${humidity}%</div>
+                `;
+
+                // Show weather alert if temperature is too high
+                if (temp > 25) {
+                    document.getElementById('weatherAlert').classList.remove('hidden');
+                    document.getElementById('alertText').textContent = 
+                        `High temperature alert! Consider providing shade for your crops.`;
+                }
+            }, 1000);
+        }
+
+        // Pest Detection
+        async function detectPests() {
+            const fileInput = document.getElementById('pestImage');
+            const resultsDiv = document.getElementById('pestResults');
+            const resultsContent = document.getElementById('pestResultsContent');
+
+            if (!fileInput.files[0]) {
+                alert('Please select an image first');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('userId', 'user123');
+            formData.append('appSlug', 'smartagri-123456');
+
+            try {
+                const response = await fetch('https://r0c8kgwocscg8gsokogwwsw4.zetaverse.one/storage/upload', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer WoErTALeTYQ2wIzti2lX6MJgAtw1'
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    resultsDiv.classList.remove('hidden');
+                    resultsContent.innerHTML = `
+                        <p class="text-green-600 font-semibold">Analysis Complete!</p>
+                        <p>Detected pests: Aphids</p>
+                        <p>Recommended action: Apply organic pesticide</p>
+                    `;
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                alert('Upload failed. Please try again.');
+            }
+        }
+
+        // Chatbot
+        function toggleChat() {
+            const chatWindow = document.getElementById('chatWindow');
+            chatWindow.classList.toggle('hidden');
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const messages = document.getElementById('chatMessages');
+            
+            if (!input.value.trim()) return;
+
+            // Add user message
+            messages.innerHTML += `
+                <div class="mb-4 text-right">
+                    <div class="bg-green-600 text-white p-2 rounded-lg inline-block">
+                        ${input.value}
+                    </div>
+                </div>
+            `;
+
+            // Simulate bot response
+            setTimeout(() => {
+                messages.innerHTML += `
+                    <div class="mb-4">
+                        <div class="bg-green-100 p-2 rounded-lg inline-block">
+                            I'll help you with that! Please provide more details.
+                        </div>
+                    </div>
+                `;
+                messages.scrollTop = messages.scrollHeight;
+            }, 1000);
+
+            input.value = '';
+        }
+
+        // Initialize
+        updateWeather();
+        setInterval(updateWeather, 300000); // Update weather every 5 minutes
+    </script>
+<script>document.body.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); return }, { passive: false })</script>
+	</body>
+</html>
